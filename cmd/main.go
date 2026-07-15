@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	// init configurations
 	cfg, err := config.InitConfig()
 	if err != nil {
 		fmt.Printf("failed to init configurations. reason: %s", err)
@@ -19,7 +18,6 @@ func main() {
 
 	logger := logging.NewLogger(cfg)
 
-	// create and run server
 	server := server.NewServer(cfg, logger)
 	if err := server.Start(); err != nil {
 		logger.Fatalf("failed to run Server. reason: %s", err)
