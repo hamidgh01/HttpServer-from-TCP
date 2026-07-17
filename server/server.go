@@ -26,7 +26,6 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config, logger *logging.Logger) *Server {
-
 	return &Server{
 		host:                 cfg.ServerHost,
 		port:                 cfg.ServerPort,
@@ -77,14 +76,12 @@ func (s *Server) acceptConnections() {
 			s.logger.Error(err.Error())
 		} else {
 			s.wg.Add(1)
+			go s.handleConnection(conn)
+			// NOTE: currently, goroutines are infinitely spawned to handle connections
+			// ToDo: add connection queue and connection-handler worker pool
 			s.logger.Infof("connection accepted from: %s", conn.RemoteAddr().String())
-			fmt.Println("connections will be handled concurrently here")
-			// go s.handleConnection(conn)
-			conn.Close()
-			s.wg.Done()
 		}
 	}
-
 }
 
 func (s *Server) shutdown() error {

@@ -22,6 +22,10 @@ type Request struct {
 	Method  string
 	Path    string
 	Version float64
+
+	// URL // ToDo: implement `type URL` to handler request url components more optimized
 	Headers Header
-	Body    []byte
+
+	ContentLength int    // if ContentLength == 0 --> Body would be `nil`
+	Body          []byte // ToDo: maybe implement this as `io.ReadCloser`
 }
