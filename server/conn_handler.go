@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hamidgh01/HttpServer-from-TCP/http"
@@ -19,7 +20,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 	}()
 
 	conn.SetDeadline(time.Now().Add(s.connTimeout))
-	for {
+	reqCounter := 0
+	for reqCounter <= s.maxRequestsPerConn {
 
 		// 1. parse incoming bytes to http request
 		request, err := parseRequest(conn)
@@ -77,6 +79,36 @@ func (s *Server) handleConnection(conn net.Conn) {
 			"'%s %s' from '%s' is served with '%s'",
 			request.Method, request.Path, conn.RemoteAddr().String(), defaultResponse.Status,
 		)
+
+		// 4. decide to keep alive or close connection (base on the request header and version)
+		if !shouldKeepAlive(request) {
+			return
+		}
+
+		// if keep alive: refresh deadline & increase reqCounter by 1
+		conn.SetDeadline(time.Now().Add(s.connTimeout))
+		reqCounter++
 	}
 
+}
+
+func shouldKeepAlive(req *http.Request) bool {
+	ConnectionHeader := req.Headers.Get("Connection")
+	if req.Version >= 1.1 {
+		// for HTTP version 1.1 and higher: default is `keep-alive` unless "Connection: close"
+		switch {
+		case len(ConnectionHeader) == 0:
+		case strings.ToLower(ConnectionHeader[0]) == "close":
+			return false
+		}
+		return true
+	}
+
+	// for HTTP version 1.0 and lower: default is `close` unless "Connection: keep-alive"
+	switch {
+	case len(ConnectionHeader) == 0:
+	case strings.ToLower(ConnectionHeader[0]) == "keep-alive":
+		return true
+	}
+	return false
 }
