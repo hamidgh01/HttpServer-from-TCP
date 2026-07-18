@@ -19,19 +19,25 @@ func ToBytes(resp *http.Response) []byte {
 }
 
 func mergeStatusLine(resp *http.Response, buf *bytes.Buffer) {
-	fmt.Fprintf(buf, "HTTP/%v %s %s", resp.Version, resp.Status, CRLF)
+	fmt.Fprintf(buf, "HTTP/%v %s%s", resp.Version, resp.Status, CRLF)
 }
 
 func mergeHeaderLines(resp *http.Response, buf *bytes.Buffer) {
 	for key, values := range resp.Headers {
-		fmt.Fprintf(buf, "%s:", key)
-		for _, v := range values {
-			fmt.Fprintf(buf, " %s", v)
+		buf.WriteString(key)
+		buf.WriteString(": ")
+		for idx, val := range values {
+			if idx == 0 {
+				buf.WriteString(val)
+			} else {
+				buf.WriteString(", ")
+				buf.WriteString(val)
+			}
 		}
-		fmt.Fprintf(buf, "%s", CRLF)
+		buf.WriteString(CRLF)
 	}
 
-	fmt.Fprintf(buf, "%s", CRLF) // an empty-line (marks end of headers, and start of body)
+	buf.WriteString(CRLF) // an empty-line (marks end of headers, and start of body)
 }
 
 func mergeBody(resp *http.Response, buf *bytes.Buffer) {
