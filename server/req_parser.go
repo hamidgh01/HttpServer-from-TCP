@@ -5,32 +5,42 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/hamidgh01/HttpServer-from-TCP/http"
 )
 
-func parseRequest(conn net.Conn) (*http.Request, error) {
+type ErrorPosition string
+
+const (
+	RequestLine ErrorPosition = "request line"
+	Headers     ErrorPosition = "headers"
+	Body        ErrorPosition = "body"
+	Nil         ErrorPosition = ""
+)
+
+func parseRequest(conn net.Conn) (*http.Request, error, ErrorPosition) {
 
 	bufferedReader := bufio.NewReader(conn)
 
 	// 1. read and parse Request Line
 	method, path, version, err := parseRequestLine(bufferedReader)
 	if err != nil {
-		return nil, err
+		return nil, err, RequestLine
 	}
 
 	// 2. read and parse Headers
 	headers, contentLength, err := parseHeaders(bufferedReader)
 	if err != nil {
-		return nil, err
+		return nil, err, Headers
 	}
 
 	// 3. read body data
 	body, err := readBody(bufferedReader, contentLength)
 	if err != nil {
-		return nil, err
+		return nil, err, Body
 	}
 
 	return &http.Request{
@@ -42,8 +52,10 @@ func parseRequest(conn net.Conn) (*http.Request, error) {
 
 		ContentLength: contentLength,
 		Body:          body,
-	}, nil
+	}, nil, Nil
 }
+
+var allowedMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE"} // + "OPTIONS", "HEAD", "CONNECT", "TRACE"
 
 func parseRequestLine(r *bufio.Reader) (method string, path string, version float64, err error) {
 
@@ -60,8 +72,22 @@ func parseRequestLine(r *bufio.Reader) (method string, path string, version floa
 
 	method, path, protocol := result[0], result[1], result[2]
 
+	// check and validate method
+	if !slices.Contains(allowedMethods, strings.ToUpper(method)) {
+		return "", "", 0, fmt.Errorf("method is not allowed/supported: '%s'", method)
+	}
+
+	// ToDo: check and validate url path (maybe)
+
+	// extract and check version
 	versionStr := strings.TrimPrefix(strings.ToUpper(protocol), "HTTP/")
 	version, err = strconv.ParseFloat(versionStr, 64)
+	if err != nil {
+		return "", "", 0, fmt.Errorf("failed to parse HTTP version: %s", err.Error())
+	}
+	if version != 1.1 && version != 1.0 {
+		return "", "", 0, fmt.Errorf("HTTP version is not supported: %f (only HTTP version 1.0 and 1.1 is supported)", version)
+	}
 
 	return
 }

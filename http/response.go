@@ -106,7 +106,7 @@ func HTMLResponse(statusCode int16, data string, r *Request) (*Response, error) 
 }
 
 func StringResponse(statusCode int16, data string, r *Request) (*Response, error) {
-	bodyBytes := []byte(data)
+	bodyBytes := []byte(data + "\r\n")
 
 	headers := make(Header)
 	contentLength := len(bodyBytes)

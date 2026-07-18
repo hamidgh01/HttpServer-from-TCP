@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -24,7 +25,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 	for reqCounter <= s.maxRequestsPerConn {
 
 		// 1. parse incoming bytes to http request
-		request, err := parseRequest(conn)
+		request, err, errPosition := parseRequest(conn)
 		if err != nil {
 			if errors.Is(err, io.EOF) ||
 				errors.Is(err, io.ErrUnexpectedEOF) ||
@@ -38,7 +39,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 				conn.RemoteAddr().String(), err.Error(),
 			)
 
-			s.serveWith400BadRequest(conn)
+			s.serveWith400BadRequest(conn, errPosition)
 			return
 		}
 
@@ -105,9 +106,14 @@ func shouldKeepAlive(req *http.Request) bool {
 	return false
 }
 
-func (s *Server) serveWith400BadRequest(conn net.Conn) {
-	respBytes := []byte("HTTP/1.1 Bad Request\r\n\r\n400 Bad Request (malformed request format)")
-	if _, err := conn.Write(respBytes); err != nil {
+func (s *Server) serveWith400BadRequest(conn net.Conn, errPosition ErrorPosition) {
+	respBody := fmt.Sprintf(
+		"400 Bad Request (malformed request format)\r\napproximate malformed position: %s",
+		errPosition,
+	)
+	response, _ := http.StringResponse(400, respBody, nil)
+
+	if _, err := conn.Write(ToBytes(response)); err != nil {
 		s.logger.Errorf("failed to send response (400) over connection: %s", err.Error())
 		return
 	}
