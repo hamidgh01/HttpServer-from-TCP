@@ -59,6 +59,10 @@ func newResponse(statusCode int16, headers Header, body []byte, r *Request) (*Re
 }
 
 func JSONResponse(statusCode int16, data any, r *Request) (*Response, error) {
+	if data == nil {
+		return newResponse(statusCode, make(Header), nil, r)
+	}
+
 	bodyBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode data to json. reason: %w", err)
@@ -72,8 +76,12 @@ func JSONResponse(statusCode int16, data any, r *Request) (*Response, error) {
 	return newResponse(statusCode, headers, bodyBytes, r)
 }
 
-func XMLResponse(statusCode int16, body any, r *Request) (*Response, error) {
-	bodyBytes, err := xml.Marshal(body)
+func XMLResponse(statusCode int16, data any, r *Request) (*Response, error) {
+	if data == nil {
+		return newResponse(statusCode, make(Header), nil, r)
+	}
+
+	bodyBytes, err := xml.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode data to xml. reason: %w", err)
 	}
@@ -86,8 +94,8 @@ func XMLResponse(statusCode int16, body any, r *Request) (*Response, error) {
 	return newResponse(statusCode, headers, bodyBytes, r)
 }
 
-func HTMLResponse(statusCode int16, body string, r *Request) (*Response, error) {
-	bodyBytes := []byte(body)
+func HTMLResponse(statusCode int16, data string, r *Request) (*Response, error) {
+	bodyBytes := []byte(data)
 
 	headers := make(Header)
 	contentLength := len(bodyBytes)
@@ -97,8 +105,8 @@ func HTMLResponse(statusCode int16, body string, r *Request) (*Response, error) 
 	return newResponse(statusCode, headers, bodyBytes, r)
 }
 
-func StringResponse(statusCode int16, body string, r *Request) (*Response, error) {
-	bodyBytes := []byte(body)
+func StringResponse(statusCode int16, data string, r *Request) (*Response, error) {
+	bodyBytes := []byte(data)
 
 	headers := make(Header)
 	contentLength := len(bodyBytes)

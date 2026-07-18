@@ -38,10 +38,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 				conn.RemoteAddr().String(), err.Error(),
 			)
 
-			// ToDo: send a HTTP Response with status = '400 Bad Request'
-			// (define a defaultBadRequestResponse of type Response and send it)
-			// s.logger.Info("malformed request from '%s' is served with '400 Bad Request'")
-
+			s.serveWith400BadRequest(conn)
 			return
 		}
 
@@ -51,20 +48,15 @@ func (s *Server) handleConnection(conn net.Conn) {
 		)
 
 		// 2. analyze received request and build proper response -> implement later (ToDo)
-		defaultBody := struct {
-			Message string `json:"message"`
-		}{Message: "Hello from HTTP Server..."}
-
-		defaultResponse, err := http.JSONResponse(200, defaultBody, request)
+		response, err := handleRequestAndGetResponse(request)
 		if err != nil {
 			s.logger.Errorf("failed to build response: %s", err.Error())
-			// ToDo: send a HTTP Response with status = '500 Internal Server Error'
-			// (define a ServerErrorResponse of type Response and send it)
+			s.serveWith500InternalServerError(conn, request)
 			return
 		}
 
 		// 3. encode response to raw bytes and send (write to conn)
-		responseBytes := ToBytes(defaultResponse)
+		responseBytes := ToBytes(response)
 		s.logger.Debugf(
 			"response for '%s %s' from '%s':\n%s\n",
 			request.Method, request.Path, conn.RemoteAddr().String(), responseBytes,
@@ -77,7 +69,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		s.logger.Infof(
 			"'%s %s' from '%s' is served with '%s'",
-			request.Method, request.Path, conn.RemoteAddr().String(), defaultResponse.Status,
+			request.Method, request.Path, conn.RemoteAddr().String(), response.Status,
 		)
 
 		// 4. decide to keep alive or close connection (base on the request header and version)
@@ -111,4 +103,28 @@ func shouldKeepAlive(req *http.Request) bool {
 		return true
 	}
 	return false
+}
+
+func (s *Server) serveWith400BadRequest(conn net.Conn) {
+	respBytes := []byte("HTTP/1.1 Bad Request\r\n\r\n400 Bad Request (malformed request format)")
+	if _, err := conn.Write(respBytes); err != nil {
+		s.logger.Errorf("failed to send response (400) over connection: %s", err.Error())
+		return
+	}
+
+	s.logger.Infof(
+		"malformed request from '%s' is served with '400 Bad Request'", conn.RemoteAddr().String(),
+	)
+}
+
+func (s *Server) serveWith500InternalServerError(conn net.Conn, req *http.Request) {
+	if _, err := conn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n")); err != nil {
+		s.logger.Errorf("failed to send response (500) over connection: %s", err.Error())
+		return
+	}
+
+	s.logger.Infof(
+		"'%s %s' from '%s' is served with '500 Internal Server Error'",
+		req.Method, req.Path, conn.RemoteAddr().String(),
+	)
 }

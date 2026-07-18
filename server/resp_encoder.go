@@ -10,10 +10,10 @@ import (
 const CRLF = "\r\n"
 
 func ToBytes(resp *http.Response) []byte {
-	var buf bytes.Buffer
-	mergeStatusLine(resp, &buf)
-	mergeHeaderLines(resp, &buf)
-	buf.Write(resp.Body)
+	buf := new(bytes.Buffer)
+	mergeStatusLine(resp, buf)
+	mergeHeaderLines(resp, buf)
+	mergeBody(resp, buf)
 
 	return buf.Bytes()
 }
@@ -30,5 +30,14 @@ func mergeHeaderLines(resp *http.Response, buf *bytes.Buffer) {
 		}
 		fmt.Fprintf(buf, "%s", CRLF)
 	}
+
 	fmt.Fprintf(buf, "%s", CRLF) // an empty-line (marks end of headers, and start of body)
+}
+
+func mergeBody(resp *http.Response, buf *bytes.Buffer) {
+	if resp.Body == nil {
+		return
+	}
+
+	buf.Write(resp.Body)
 }
