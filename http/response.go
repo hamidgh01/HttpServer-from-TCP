@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -39,16 +38,35 @@ type Response struct {
 
 var defaultHttpVersion float32 = 1.1
 
-func newResponse(statusCode int16, headers Header, body []byte, r *Request) (*Response, error) {
+func newResponse(
+	statusCode int16,
+	body []byte,
+	contentType string, // would be "" if body == nil
+	r *Request,
+) (*Response, error) {
+
 	status, err := setStatus(statusCode)
 	if err != nil {
 		return nil, err
 	}
 
+	headers := make(Header)
+
 	// default headers for all responses
 	headers.Set("Server", "HTTP-Server-by-hamidgh01")
 	headers.Set("Date", time.Now().Format(time.RFC1123Z))
 
+	if body == nil {
+		return &Response{
+			Version: defaultHttpVersion,
+			Status:  status,
+			Headers: headers,
+			Body:    nil,
+			Request: r,
+		}, nil
+	}
+
+	headers.Set("Content-Type", contentType) // + charset=utf-8
 	return &Response{
 		Version: defaultHttpVersion,
 		Status:  status,
@@ -60,7 +78,7 @@ func newResponse(statusCode int16, headers Header, body []byte, r *Request) (*Re
 
 func JSONResponse(statusCode int16, data any, r *Request) (*Response, error) {
 	if data == nil {
-		return newResponse(statusCode, make(Header), nil, r)
+		return newResponse(statusCode, nil, "", r)
 	}
 
 	bodyBytes, err := json.Marshal(data)
@@ -68,17 +86,12 @@ func JSONResponse(statusCode int16, data any, r *Request) (*Response, error) {
 		return nil, fmt.Errorf("failed to encode data to json. reason: %w", err)
 	}
 
-	headers := make(Header)
-	contentLength := len(bodyBytes)
-	headers.Set("Content-Length", strconv.Itoa(contentLength))
-	headers.Set("Content-Type", "application/json") // charset=utf-8
-
-	return newResponse(statusCode, headers, bodyBytes, r)
+	return newResponse(statusCode, bodyBytes, "application/json", r)
 }
 
 func XMLResponse(statusCode int16, data any, r *Request) (*Response, error) {
 	if data == nil {
-		return newResponse(statusCode, make(Header), nil, r)
+		return newResponse(statusCode, nil, "", r)
 	}
 
 	bodyBytes, err := xml.Marshal(data)
@@ -86,32 +99,15 @@ func XMLResponse(statusCode int16, data any, r *Request) (*Response, error) {
 		return nil, fmt.Errorf("failed to encode data to xml. reason: %w", err)
 	}
 
-	headers := make(Header)
-	contentLength := len(bodyBytes)
-	headers.Set("Content-Length", strconv.Itoa(contentLength))
-	headers.Set("Content-Type", "application/xml") // charset=utf-8
-
-	return newResponse(statusCode, headers, bodyBytes, r)
+	return newResponse(statusCode, bodyBytes, "application/xml", r)
 }
 
 func HTMLResponse(statusCode int16, data string, r *Request) (*Response, error) {
 	bodyBytes := []byte(data)
-
-	headers := make(Header)
-	contentLength := len(bodyBytes)
-	headers.Set("Content-Length", strconv.Itoa(contentLength))
-	headers.Set("Content-Type", "text/html") // charset=utf-8
-
-	return newResponse(statusCode, headers, bodyBytes, r)
+	return newResponse(statusCode, bodyBytes, "text/html", r)
 }
 
 func StringResponse(statusCode int16, data string, r *Request) (*Response, error) {
 	bodyBytes := []byte(data + "\r\n")
-
-	headers := make(Header)
-	contentLength := len(bodyBytes)
-	headers.Set("Content-Length", strconv.Itoa(contentLength))
-	headers.Set("Content-Type", "text/plain") // charset=utf-8
-
-	return newResponse(statusCode, headers, bodyBytes, r)
+	return newResponse(statusCode, bodyBytes, "text/plain", r)
 }
