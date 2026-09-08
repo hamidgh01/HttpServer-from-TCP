@@ -45,12 +45,8 @@ func InitConfig() (*Config, error) {
 var ipv4Pattern = regexp.MustCompile(`^(\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$`)
 
 func parseCLI(c *Config) error {
-	flag.StringVar(
-		&c.ServerHost, "host", DEFAULT_SERVER_HOST, "Host to bind the server",
-	)
-	flag.IntVar(
-		&c.ServerPort, "port", DEFAULT_SERVER_PORT, "Port to bind the server",
-	)
+	flag.StringVar(&c.ServerHost, "host", DEFAULT_SERVER_HOST, "Host to bind the server")
+	flag.IntVar(&c.ServerPort, "port", DEFAULT_SERVER_PORT, "Port to bind the server")
 	flag.IntVar(
 		&c.TCPConnectionTimeout,
 		"timeout",
@@ -65,10 +61,16 @@ func parseCLI(c *Config) error {
 	)
 
 	flag.StringVar(
-		&c.LogLevel, "log-level", DEFAULT_LOG_LEVEL, "Logging level (OPTIONS: debug, info, warning, error, fatal)",
+		&c.LogLevel,
+		"log-level",
+		DEFAULT_LOG_LEVEL,
+		"Logging level (OPTIONS: debug, info, warning, error, fatal)",
 	)
 	flag.StringVar(
-		&c.LogOutputFile, "log-output", DEFAULT_LOG_OUTPUT_FILE, "Path to the log file. e.g. `./app.log` (default: os.Stdout)",
+		&c.LogOutputFile,
+		"log-output",
+		DEFAULT_LOG_OUTPUT_FILE,
+		"Path to the log file. e.g. `./app.log` (default: os.Stdout)",
 	)
 
 	flag.Parse()

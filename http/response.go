@@ -66,7 +66,7 @@ func newResponse(
 		}, nil
 	}
 
-	headers.Set("Content-Type", contentType) // + charset=utf-8
+	headers.Set("Content-Type", contentType)
 	return &Response{
 		Version: defaultHttpVersion,
 		Status:  status,
@@ -86,7 +86,7 @@ func JSONResponse(statusCode int16, data any, r *Request) (*Response, error) {
 		return nil, fmt.Errorf("failed to encode data to json. reason: %w", err)
 	}
 
-	return newResponse(statusCode, bodyBytes, "application/json", r)
+	return newResponse(statusCode, bodyBytes, "application/json; charset=utf-8", r)
 }
 
 func XMLResponse(statusCode int16, data any, r *Request) (*Response, error) {
@@ -99,15 +99,15 @@ func XMLResponse(statusCode int16, data any, r *Request) (*Response, error) {
 		return nil, fmt.Errorf("failed to encode data to xml. reason: %w", err)
 	}
 
-	return newResponse(statusCode, bodyBytes, "application/xml", r)
+	return newResponse(statusCode, bodyBytes, "application/xml; charset=utf-8", r)
 }
 
 func HTMLResponse(statusCode int16, data string, r *Request) (*Response, error) {
 	bodyBytes := []byte(data)
-	return newResponse(statusCode, bodyBytes, "text/html", r)
+	return newResponse(statusCode, bodyBytes, "text/html; charset=utf-8", r)
 }
 
 func StringResponse(statusCode int16, data string, r *Request) (*Response, error) {
 	bodyBytes := []byte(data + "\r\n")
-	return newResponse(statusCode, bodyBytes, "text/plain", r)
+	return newResponse(statusCode, bodyBytes, "text/plain; charset=utf-8", r)
 }

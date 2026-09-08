@@ -15,8 +15,7 @@
 go.work
 
 # custom
-.todo
-notes.txt
+notes/
 .env
 *.excalidraw
 *.drawio*

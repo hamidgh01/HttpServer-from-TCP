@@ -48,7 +48,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			request.Method, request.Path, conn.RemoteAddr().String(),
 		)
 
-		// 2. analyze received request and build proper response -> implement later (ToDo)
+		// 2. analyze received request and build proper response
 		response, err := handleRequestAndGetResponse(request)
 		if err != nil {
 			s.logger.Errorf("failed to build response: %s", err.Error())
