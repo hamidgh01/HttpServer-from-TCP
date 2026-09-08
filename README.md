@@ -9,6 +9,7 @@ A minimal HttpServer, developed in order to dive deeper into HTTP protocol, and 
 - [Overview of Features](#overview-of-features)
 - [Directory Layout](#directory-layout)
 - [How It Works (Server Architecture and Work Cycle)](#how-it-works-server-architecture-and-work-cycle)
+- [Setup and Test](#setup-and-test)
 
 <br>
 
@@ -65,6 +66,82 @@ A minimal HttpServer, developed in order to dive deeper into HTTP protocol, and 
 3. Encode generated HTTP response to raw bytes using `Response Encoder`
 4. Send encoded response bytes to TCP connection
 5. **Keep alive connection** and wait for the next incoming request bytes (and go to step 1) / or **Close connection**
+
+<br>
+
+## Setup and Test
+
+First clone the repository:
+
+```bash
+git clone https://github.com/hamidgh01/HttpServer-from-TCP.git
+```
+
+or [download the zip file](https://github.com/hamidgh01/HttpServer-from-TCP/archive/refs/heads/main.zip), and unzip
+
+### Docker Setup
+
+Requirements: **Docker**
+
+Build image:
+
+```bash
+cd HttpServer-from-TCP
+docker build -t httpserver:0.1.0 .
+```
+
+**Base Images:** `golang:1.27-alpine` for build, and `alpine:3` for runtime
+
+Run a container from built image:
+
+```bash
+docker run -d -p 8000:8000 --name my-httpserver httpserver:0.1.0
+# or
+docker run -d -P --name my-httpserver httpserver:0.1.0
+docker port my-httpserver  # to check port mapping
+```
+
+### Local Setup
+
+Requirements: **Go Language**
+
+There is'nt any dependency and env/configuration setup for this project!
+
+Just go to project's root directory and run the server:
+
+```bash
+cd HttpServer-from-TCP
+
+go run ./cmd
+# or
+go build -o httpserver ./cmd/main.go
+./httpserver
+```
+
+But you can change default configurations using CLI flags. use `-help` flag to see options:
+
+```bash
+go run ./cmd -help
+./httpserver -help
+```
+
+### Test HTTP-Server Manually:‍‍
+
+```bash
+curl -v http://localhost:8000
+curl -v http://127.0.0.1:8000
+curl -v http://127.0.0.1:8000/home
+curl -v http://127.0.0.1:8000/optional/path
+```
+
+Or, just open your browser and enter:
+
+```text
+http://localhost:8000
+http://127.0.0.1:8000
+http://127.0.0.1:8000/home
+http://127.0.0.1:8000/optional/path
+```
 
 <br>
 
